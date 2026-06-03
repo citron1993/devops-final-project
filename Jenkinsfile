@@ -9,7 +9,7 @@ pipeline {
     }
 
     parameters {
-        string(name: 'AWS_REGION', defaultValue: 'eu-central-1', description: 'AWS region for the website server')
+        string(name: 'AWS_REGION', defaultValue: 'eu-north-1', description: 'AWS region for the website server')
         string(name: 'PROJECT_NAME', defaultValue: 'devops-final-site', description: 'Project name used for AWS tags')
         string(name: 'KEY_NAME', defaultValue: '', description: 'Existing AWS EC2 key pair name')
         string(name: 'SSH_PRIVATE_KEY_CREDENTIALS_ID', defaultValue: 'aws-ec2-ssh-key', description: 'Jenkins credentials ID for the matching private SSH key')
@@ -38,22 +38,32 @@ pipeline {
 
         stage('Terraform Init') {
             steps {
-                dir(env.TERRAFORM_DIR) {
-                    sh 'terraform init'
+                withCredentials([
+                    string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')
+                ]) {
+                    dir(env.TERRAFORM_DIR) {
+                        sh 'terraform init'
+                    }
                 }
             }
         }
 
         stage('Terraform Plan') {
             steps {
-                dir(env.TERRAFORM_DIR) {
-                    sh """
-                        terraform plan \
-                          -var='aws_region=${params.AWS_REGION}' \
-                          -var='project_name=${params.PROJECT_NAME}' \
-                          -var='key_name=${params.KEY_NAME}' \
-                          -out=tfplan
-                    """
+                withCredentials([
+                    string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')
+                ]) {
+                    dir(env.TERRAFORM_DIR) {
+                        sh """
+                            terraform plan \
+                              -var='aws_region=${params.AWS_REGION}' \
+                              -var='project_name=${params.PROJECT_NAME}' \
+                              -var='key_name=${params.KEY_NAME}' \
+                              -out=tfplan
+                        """
+                    }
                 }
             }
         }
@@ -65,8 +75,13 @@ pipeline {
                         input message: 'Apply Terraform plan?'
                     }
                 }
-                dir(env.TERRAFORM_DIR) {
-                    sh 'terraform apply -auto-approve tfplan'
+                withCredentials([
+                    string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')
+                ]) {
+                    dir(env.TERRAFORM_DIR) {
+                        sh 'terraform apply -auto-approve tfplan'
+                    }
                 }
             }
         }

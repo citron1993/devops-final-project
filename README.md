@@ -35,29 +35,39 @@
 - Jenkins נגיש מהאינטרנט או מהרשת שבה עובדים.
 - Jenkins עם הכלים הבאים מותקנים: Git, Terraform, Ansible, AWS CLI ו-Curl.
 - Credentials ב-Jenkins:
-  - AWS credentials עבור Terraform.
-  - SSH private key שמתאים ל-Key Pair ב-AWS.
-- Key Pair קיים ב-AWS, לדוגמה `devops-course-key`.
+  - `aws-access-key-id`
+  - `aws-secret-access-key`
+  - `aws-ec2-ssh-key`
+- Key Pair קיים ב-AWS בשם `devops-course-key`.
 
 ## הגדרת Jenkins
 
 1. יוצרים Pipeline Job חדש.
 2. מגדירים SCM ל-GitHub repository של הפרויקט.
-3. מגדירים Jenkins credentials:
-   - `aws-ec2-ssh-key` עבור המפתח הפרטי של EC2.
-   - הרשאות AWS לפי הדרך המקובלת בסביבת Jenkins שלכם.
-4. מריצים את ה-Pipeline עם הפרמטרים:
-   - `AWS_REGION`: לדוגמה `eu-central-1`.
-   - `PROJECT_NAME`: לדוגמה `devops-final-site`.
-   - `KEY_NAME`: שם ה-Key Pair שקיים ב-AWS.
+3. מגדירים את ה-repository branch ל-`main`.
+4. מגדירים Script Path:
+
+```text
+Jenkinsfile
+```
+
+5. מריצים את ה-Pipeline עם הפרמטרים:
+
+```text
+AWS_REGION = eu-north-1
+PROJECT_NAME = devops-final-site
+KEY_NAME = devops-course-key
+SSH_PRIVATE_KEY_CREDENTIALS_ID = aws-ec2-ssh-key
+AUTO_APPROVE = true
+```
 
 ## הרצה מקומית לבדיקה
 
 ```bash
 cd terraform
 terraform init
-terraform plan -var='key_name=YOUR_KEY_NAME'
-terraform apply -auto-approve -var='key_name=YOUR_KEY_NAME'
+terraform plan -var='key_name=devops-course-key'
+terraform apply -auto-approve -var='key_name=devops-course-key'
 cd ..
 printf "[web]\n$(cd terraform && terraform output -raw public_ip) ansible_user=ubuntu\n" > inventory.ini
 ansible-playbook -i inventory.ini ansible/site.yml
@@ -70,7 +80,7 @@ curl "$(cd terraform && terraform output -raw website_url)"
 
 ```bash
 cd terraform
-terraform destroy -var='key_name=YOUR_KEY_NAME'
+terraform destroy -var='key_name=devops-course-key'
 ```
 
 ## בונוסים אפשריים
