@@ -111,8 +111,8 @@ pipeline {
                 ]) {
                     bat """
                         copy "%SSH_KEY_FILE%" ansible_key.pem >NUL
-                        for /f %%i in ('wsl wslpath "%WORKSPACE%"') do set WORKSPACE_WSL=%%i
-                        wsl bash -lc "cd \\"%WORKSPACE_WSL%\\" && mkdir -p ~/.ssh && cp ansible_key.pem ~/.ssh/devops-course-key.pem && chmod 600 ~/.ssh/devops-course-key.pem && ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i ${env.INVENTORY_FILE} --private-key ~/.ssh/devops-course-key.pem -u %SSH_USER% ansible/site.yml"
+                        for /f %%i in ('wsl -d Ubuntu wslpath "%WORKSPACE%"') do set WORKSPACE_WSL=%%i
+                        wsl -d Ubuntu bash -lc "cd \\"%WORKSPACE_WSL%\\" && mkdir -p ~/.ssh && cp ansible_key.pem ~/.ssh/devops-course-key.pem && chmod 600 ~/.ssh/devops-course-key.pem && ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i ${env.INVENTORY_FILE} --private-key ~/.ssh/devops-course-key.pem -u %SSH_USER% ansible/site.yml"
                         del ansible_key.pem
                     """
                 }
