@@ -1,4 +1,5 @@
 pipeline {
+    //version '2.0'
     agent any
 
     environment {
@@ -108,7 +109,12 @@ pipeline {
                         usernameVariable: 'SSH_USER'
                     )
                 ]) {
-                    bat "ansible-playbook -i ${env.INVENTORY_FILE} --private-key \"%SSH_KEY_FILE%\" -u \"%SSH_USER%\" ansible\\site.yml"
+                    bat """
+                        copy "%SSH_KEY_FILE%" ansible_key.pem >NUL
+                        for /f %%i in ('wsl wslpath "%WORKSPACE%"') do set WORKSPACE_WSL=%%i
+                        wsl bash -lc "cd \\"%WORKSPACE_WSL%\\" && mkdir -p ~/.ssh && cp ansible_key.pem ~/.ssh/devops-course-key.pem && chmod 600 ~/.ssh/devops-course-key.pem && ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i ${env.INVENTORY_FILE} --private-key ~/.ssh/devops-course-key.pem -u %SSH_USER% ansible/site.yml"
+                        del ansible_key.pem
+                    """
                 }
             }
         }
