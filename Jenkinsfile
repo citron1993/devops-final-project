@@ -5,6 +5,7 @@ pipeline {
         TF_IN_AUTOMATION = 'true'
         ANSIBLE_HOST_KEY_CHECKING = 'False'
         TERRAFORM_DIR = 'terraform'
+        TERRAFORM_EXE = 'C:\\terraform\\terraform.exe'
         INVENTORY_FILE = 'inventory.ini'
     }
 
@@ -43,7 +44,7 @@ pipeline {
                     string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')
                 ]) {
                     dir(env.TERRAFORM_DIR) {
-                        bat 'terraform init'
+                        bat "\"${env.TERRAFORM_EXE}\" init"
                     }
                 }
             }
@@ -57,7 +58,7 @@ pipeline {
                 ]) {
                     dir(env.TERRAFORM_DIR) {
                         bat """
-                            terraform plan ^
+                            "${env.TERRAFORM_EXE}" plan ^
                               -var="aws_region=${params.AWS_REGION}" ^
                               -var="project_name=${params.PROJECT_NAME}" ^
                               -var="key_name=${params.KEY_NAME}" ^
@@ -80,7 +81,7 @@ pipeline {
                     string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')
                 ]) {
                     dir(env.TERRAFORM_DIR) {
-                        bat 'terraform apply -auto-approve tfplan'
+                        bat "\"${env.TERRAFORM_EXE}\" apply -auto-approve tfplan"
                     }
                 }
             }
@@ -90,7 +91,7 @@ pipeline {
             steps {
                 dir(env.TERRAFORM_DIR) {
                     bat """
-                        for /f %%i in ('terraform output -raw public_ip') do set PUBLIC_IP=%%i
+                        for /f %%i in ('"${env.TERRAFORM_EXE}" output -raw public_ip') do set PUBLIC_IP=%%i
                         echo [web] > ..\\${env.INVENTORY_FILE}
                         echo %PUBLIC_IP% ansible_user=ubuntu >> ..\\${env.INVENTORY_FILE}
                     """
@@ -110,7 +111,7 @@ pipeline {
             steps {
                 dir(env.TERRAFORM_DIR) {
                     bat """
-                        for /f %%i in ('terraform output -raw website_url') do set SITE_URL=%%i
+                        for /f %%i in ('"${env.TERRAFORM_EXE}" output -raw website_url') do set SITE_URL=%%i
                         curl --fail --retry 10 --retry-delay 6 "%SITE_URL%"
                         echo Website is available at %SITE_URL%
                     """
