@@ -101,8 +101,14 @@ pipeline {
 
         stage('Configure Website') {
             steps {
-                sshagent(credentials: [params.SSH_PRIVATE_KEY_CREDENTIALS_ID]) {
-                    bat "ansible-playbook -i ${env.INVENTORY_FILE} ansible\\site.yml"
+                withCredentials([
+                    sshUserPrivateKey(
+                        credentialsId: params.SSH_PRIVATE_KEY_CREDENTIALS_ID,
+                        keyFileVariable: 'SSH_KEY_FILE',
+                        usernameVariable: 'SSH_USER'
+                    )
+                ]) {
+                    bat "ansible-playbook -i ${env.INVENTORY_FILE} --private-key \"%SSH_KEY_FILE%\" -u \"%SSH_USER%\" ansible\\site.yml"
                 }
             }
         }
