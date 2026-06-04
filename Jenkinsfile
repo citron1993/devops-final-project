@@ -111,9 +111,16 @@ pipeline {
                 ]) {
                     bat """
                         copy "%SSH_KEY_FILE%" ansible_key.pem >NUL
-                        for /f %%i in ('wsl -d Ubuntu wslpath "%WORKSPACE%"') do set WORKSPACE_WSL=%%i
+                        powershell -NoProfile -Command "$p=$env:WORKSPACE -replace '\\\\','/'; $p=$p -replace '^([A-Za-z]):','/mnt/$($matches[1].ToLower())'; Set-Content -Path workspace_wsl.txt -Value $p"
+                        set /p WORKSPACE_WSL=<workspace_wsl.txt
                         wsl -d Ubuntu bash -lc "cd \\"%WORKSPACE_WSL%\\" && mkdir -p ~/.ssh && cp ansible_key.pem ~/.ssh/devops-course-key.pem && chmod 600 ~/.ssh/devops-course-key.pem && ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i ${env.INVENTORY_FILE} --private-key ~/.ssh/devops-course-key.pem -u %SSH_USER% ansible/site.yml"
+                        if errorlevel 1 (
+                            del ansible_key.pem
+                            del workspace_wsl.txt
+                            exit /b 1
+                        )
                         del ansible_key.pem
+                        del workspace_wsl.txt
                     """
                 }
             }
