@@ -111,7 +111,7 @@ pipeline {
                 ]) {
                     bat """
                         copy "%SSH_KEY_FILE%" ansible_key.pem >NUL
-                        docker run --rm -v "%WORKSPACE%:/workspace" -w /workspace ubuntu:24.04 bash -lc "apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y ansible openssh-client python3 && chmod 600 ansible_key.pem && ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i ${env.INVENTORY_FILE} --private-key ansible_key.pem -u %SSH_USER% ansible/site.yml"
+                        docker run --rm -v "%WORKSPACE%:/workspace" -w /workspace ubuntu:24.04 bash -lc "apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y ansible openssh-client python3 && cp ansible_key.pem /tmp/ansible_key.pem && chmod 600 /tmp/ansible_key.pem && ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i ${env.INVENTORY_FILE} --private-key /tmp/ansible_key.pem -u %SSH_USER% ansible/site.yml"
                         if errorlevel 1 (
                             del ansible_key.pem
                             exit /b 1
